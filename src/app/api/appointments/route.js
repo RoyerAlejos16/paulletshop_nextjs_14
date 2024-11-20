@@ -58,8 +58,8 @@ export async function GET(request) {
       return times;
     });
 
-    console.log('Appointments:', appointments);
-    console.log('Occupied times:', occupiedTimes);
+   //console.log('Appointments:', appointments);
+   // console.log('Occupied times:', occupiedTimes);
 
     return NextResponse.json({ appointments, occupiedTimes });
   } catch (error) {

@@ -141,42 +141,32 @@ const CalendarPage = () => {
       return newDate;
     });
   };
-
   const getAvailableTimes = () => {
-    const occupiedTimesISO = occupiedTimes.map(time => time.toISOString());
-    console.log("Ocupados", occupiedTimesISO);
-    console.log("occupiedTimes", occupiedTimes);
+    // Convertir horas ocupadas a objetos Date
+    const occupiedTimesLocal = occupiedTimes.map(time => {
+      const date = new Date(time);
+      date.setHours(date.getHours() + 6); // Ajustar +6 horas
+      return date;
+  });
+  
+    console.log("Ocupados (Date):", occupiedTimesLocal);
 
+    // Generar horas del primer periodo (ya en local)
     const firstPeriodHours = [15, 15.25, 15.5, 15.75, 16, 16.25, 16.5, 16.75, 17, 17.25, 17.5, 17.75, 18];
-    const secondPeriodHours = [11, 11.25, 11.5, 11.75, 12, 12.25, 12.5, 12.75, 13, 13.25, 13.5, 13.75, 14, 14.25, 14.5, 14.75, 15, 15.25, 15.5, 15.75, 16, 16.25, 16.5, 16.75, 17, 17.25, 17.5, 17.75, 18];
-
     const firstPeriodTimes = generateTimesForDate(selectedDate, firstPeriodHours);
-    const secondPeriodTimes = generateTimesForDate(selectedDate, secondPeriodHours);
+    console.log("firstPeriodTimes (Date):", firstPeriodTimes);
 
-    if (isWithinFirstPeriod(selectedDate)) {
-      console.log("firstPeriodTimes", firstPeriodTimes);
-      const availableTimes = firstPeriodTimes.filter(time => {
-        const isOccupied = occupiedTimesISO.includes(time.toISOString());
-        if (isOccupied) {
-          console.log(`Time ${time.toISOString()} is occupied`);
-        }
+    // Filtrar horarios disponibles
+    const availableTimes = firstPeriodTimes.filter((time) => {
+        const isOccupied = occupiedTimesLocal.some(occupied => occupied.getTime() === time.getTime());
+        console.log(`Comparando: ${time} con ocupados ${isOccupied}`);
         return !isOccupied;
-      });
-      console.log("availableTimes (firstPeriodTimes)", availableTimes);
-      return availableTimes;
-    } else if (isWithinSecondPeriod(selectedDate)) {
-      const availableTimes = secondPeriodTimes.filter(time => {
-        const isOccupied = occupiedTimesISO.includes(time.toISOString());
-        if (isOccupied) {
-          console.log(`Time ${time.toISOString()} is occupied`);
-        }
-        return !isOccupied;
-      });
-      console.log("availableTimes (secondPeriodTimes)", availableTimes);
-      return availableTimes;
-    }
-    return [];
-  };
+    });
+
+    console.log("availableTimes (filtered):", availableTimes);
+    return availableTimes;
+};
+
 
   const getMinTime = () => {
     if (isWithinFirstPeriod(selectedDate)) {
