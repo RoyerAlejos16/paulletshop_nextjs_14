@@ -48,7 +48,7 @@ export async function GET(request) {
     const occupiedTimes = appointments.flatMap(appointment => {
       const startTime = new Date(appointment.date);
       const endTime = new Date(startTime);
-      endTime.setHours(startTime.getHours() + Math.floor(appointment.duration)); // Aquí aseguramos que es float
+      endTime.setMinutes(startTime.getMinutes() + appointment.duration * 60); // Convertir duración a minutos
 
       const times = [];
       for (let time = new Date(startTime); time < endTime; time.setMinutes(time.getMinutes() + 15)) {
