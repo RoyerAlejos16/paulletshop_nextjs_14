@@ -19,3 +19,22 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: bold;
 }
+
+.time-slots button {
+  margin: 5px;
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  cursor: pointer;
+}
+
+.time-slots button.selected {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.time-slots button:disabled {
+  background-color: #ddd;
+  cursor: not-allowed;
+}
