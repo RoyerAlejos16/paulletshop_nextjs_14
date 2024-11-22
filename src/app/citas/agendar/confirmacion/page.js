@@ -50,7 +50,7 @@ const ConfirmationPage = () => {
   const handleConfirm = async () => {
     const data = {
       date: searchParams.get('date'),
-      service: searchParams.get('services').split(','),
+      service: searchParams.get('services') ? searchParams.get('services').split(',') : [],
       duration: searchParams.get('totalDuration'),
       status: 'solicitado',
       number: searchParams.get('phone'),

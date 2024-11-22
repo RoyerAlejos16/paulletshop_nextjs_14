@@ -1,16 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from './prismaClient';
 import next from 'next';
-
+import cors, { corsMiddleware  } from '../../../../libs/cors';
 // Valida si un campo existe y es válido
-function validateRequestBody(body) {
-  const requiredFields = ['date', 'service', 'duration', 'status', 'number', 'name'];
-  for (const field of requiredFields) {
-    if (!body[field]) {
-      throw new Error(`Missing required field: ${field}`);
-    }
-  }
-}
+
 
 // GET: Obtiene las citas y horarios ocupados
 export async function GET1(request) {
@@ -64,7 +57,35 @@ export async function GET1(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// Middleware para ejecutar CORS antes de cada handler
+function setCorsHeaders(response) {
+  const cors = corsMiddleware();
+
+  // Configurar encabezados de CORS
+  response.headers.set('Access-Control-Allow-Origin', cors.origin);
+  response.headers.set('Access-Control-Allow-Methods', cors.methods.join(', '));
+  response.headers.set('Access-Control-Allow-Headers', cors.headers.join(', '));
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+}
+
+// Valida si un campo existe y es válido
+function validateRequestBody(body) {
+  const requiredFields = ['date', 'service', 'duration', 'status', 'number', 'name'];
+  for (const field of requiredFields) {
+    if (!body[field]) {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+}
+
 export async function GET(request) {
+
+  const response = new NextResponse();
+
+  // Configurar CORS
+  setCorsHeaders(response);
+  
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date');
   console.log('Received date:', date);
@@ -127,6 +148,13 @@ export async function GET(request) {
   }
 }
 export async function POST(request) {
+
+    // Manejo de CORS
+    const response = new NextResponse();
+
+    // Configurar CORS
+    setCorsHeaders(response);
+  
   const { date, service, duration, status, number, name } = await request.json();
 
   try {
@@ -161,4 +189,9 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+export async function OPTIONS(request) {
+  const response = new NextResponse();
+  setCorsHeaders(response);
+  return response;
 }
