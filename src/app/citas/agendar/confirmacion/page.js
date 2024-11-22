@@ -46,7 +46,7 @@ const ConfirmationPage = () => {
     // Redirigir a la página anterior con los datos
     router.push(`/citas/agendar?date=${searchParams.get('date')}&name=${searchParams.get('name')}&phone=${searchParams.get('phone')}&services=${searchParams.get('services')}&totalDuration=${searchParams.get('totalDuration')}`);
   };
-
+  
   const handleConfirm = async () => {
     const data = {
       date: searchParams.get('date'),
@@ -57,7 +57,7 @@ const ConfirmationPage = () => {
       name: searchParams.get('name'),
     };
 
-    console.log('Datos enviados:', data);
+    //console.log('Datos enviados:', data);
 
     try {
       const response = await axios.post('http://localhost:3000/api/appointments', data);
@@ -72,17 +72,39 @@ const ConfirmationPage = () => {
   if (!appointmentData) {
     return <div>Cargando...</div>;
   }
+  const startDate = new Date(appointmentData.date);
+  const endDate = new Date(startDate.getTime() + appointmentData.totalDuration * 60 * 60 * 1000); // Convertir duración a milisegundos
 
   return (
-    <div>
-      <h1>Confirmación de Cita</h1>
-      <p>Fecha: {new Date(appointmentData.date).toLocaleString('es-ES', { timeZone: 'America/Mexico_City' })}</p>
-      <p>Nombre: {appointmentData.name}</p>
-      <p>Teléfono: {appointmentData.phone}</p>
-      <p>Servicios: {appointmentData.services.join(', ')}</p>
-      <p>Duración Total: {appointmentData.totalDuration} horas</p>
-      <button onClick={handleConfirm} className="bg-green-500 text-white py-2 px-4 rounded mr-2">Realizar Cita</button>
-      <button onClick={handleEdit} className="bg-blue-500 text-white py-2 px-4 rounded">Editar Cita</button>
+    <div className="bg-white bg-opacity-90 p-6 rounded-lg shadow-lg">
+      <h1 className="text-2xl font-bold mb-4 text-center">Confirmación de Cita</h1>
+      <p className="text-lg mb-2">
+        <span className="font-semibold">Fecha:</span> {startDate.toLocaleString('es-ES', { timeZone: 'America/Mexico_City', hour12: true })}
+      </p>
+      <p className="text-lg mb-2">
+        <span className="font-semibold">Hora de Finalización:</span> {endDate.toLocaleString('es-ES', { timeZone: 'America/Mexico_City', hour12: true })}
+      </p>
+      <p className="text-lg mb-2">
+        <span className="font-semibold">Nombre:</span> {appointmentData.name}
+      </p>
+      <p className="text-lg mb-2">
+        <span className="font-semibold">Teléfono:</span> {appointmentData.phone}
+      </p>
+      <p className="text-lg mb-2">
+        <span className="font-semibold">Servicios:</span> {appointmentData.services.join(', ')}
+      </p>
+      <p className="text-lg mb-4">
+        <span className="font-semibold">Duración Total:</span> {Math.floor(appointmentData.totalDuration)} horas {Math.round((appointmentData.totalDuration % 1) * 60)} minutos
+      </p>
+      
+      <div className="flex justify-between mb-4">
+        <button onClick={handleEdit} className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Editar Cita</button>
+        <button onClick={handleConfirm} className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600">Realizar Cita</button>
+      </div>
+
+      <p className="text-sm text-red-500 text-center">
+        Por favor, verifique que el número de teléfono sea correcto para recibir la confirmación de la cita.
+      </p>
     </div>
   );
 };
