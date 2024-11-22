@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from './prismaClient';
-import next from 'next';
+//import next from 'next';
 import cors, { corsMiddleware  } from '../../../../libs/cors';
 // Valida si un campo existe y es válido
 
