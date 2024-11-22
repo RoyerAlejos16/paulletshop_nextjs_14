@@ -137,7 +137,12 @@ export default function AppointmentScheduler() {
           <div className="mb-4">
             <label className="block text-gray-700">Selecciona la fecha:</label>
             <Calendar
-              onChange={(date) => setSelectedDate(new Date(date))}
+             onChange={(date) => {
+              const newDate = new Date(date);
+              setSelectedDate(newDate);
+              // Actualiza `selectedTime` para que refleje la nueva fecha seleccionada
+              setSelectedTime(new Date(newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes())));
+            }}
               value={selectedDate}
               tileDisabled={({ date }) => !date}
               className="w-full p-2 border rounded shadow-sm"
