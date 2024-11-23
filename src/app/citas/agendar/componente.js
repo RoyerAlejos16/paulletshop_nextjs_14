@@ -1,19 +1,16 @@
-"use client"; // Asegúrate de que este archivo sea un componente del cliente
-import { useState, useEffect, use } from 'react';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import DatePicker from 'react-datepicker';
 import Calendar from 'react-calendar';
 import Select from 'react-select';
 import 'react-datepicker/dist/react-datepicker.css';
 import 'react-calendar/dist/Calendar.css'; // Asegúrate de importar los estilos
 import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
-import { set } from 'date-fns';
 import { toast, ToastContainer } from 'react-toastify';
-import '../../globals.css';
-import { setHours, setMinutes, addHours } from 'date-fns';
-
-
+import 'react-toastify/dist/ReactToastify.css';
+import { setHours, setMinutes } from 'date-fns';
 
 export default function AppointmentScheduler() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -24,17 +21,36 @@ export default function AppointmentScheduler() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [totalDuration, setTotalDuration] = useState(0); // Duración predeterminada
+  const [freeTime, setFreeTime] = useState({
+    '2023-11-01': 180, // 3 horas libres
+    '2023-11-02': 90,  // 1.5 horas libres
+    '2023-11-03': 30,  // 0.5 horas libres
+    '2023-11-04': 0,   // No hay tiempo libre
+  }); // Tiempo libre por fecha
   const router = useRouter();
   const searchParams = useSearchParams();
-
+  const serviceDurations = {
+    Pedicure: 1.5, // Ejemplo: Pedicure toma 1.5 horas
+    Manicure: 1,
+    Gelish: 1.25,
+    "Pintura Tradicional": 1,
+  };
+  
+  // Calcula la duración total cada vez que cambian los servicios
+  useEffect(() => {
+    const total = selectedServices.reduce(
+      (sum, service) => sum + (serviceDurations[service] || 0),
+      0
+    );
+    setTotalDuration(total);
+  }, [selectedServices]);
+  
   const serviceOptions = [
     { value: 'Pedicure', label: 'Pedicure' },
     { value: 'Manicure', label: 'Manicure' },
-    { value: 'Gelish', label: 'Sofgt Gel' },
-    { value: 'Pintura Tradicional', label: 'Pintura Tradicional' },
-
+    { value: 'Gelish', label: 'Gelish' },
   ];
-
+  
   // Obtener citas ocupadas cuando se cambia la fecha activa en el calendario
   const getOccupiedTimes = async (date) => {
     try {
@@ -49,14 +65,28 @@ export default function AppointmentScheduler() {
   
       setOccupiedTimes(occupiedTimes);
       setAppointments(appointments);
-       // Calcular el tiempo libre por fecha
-       
+
+      // Calcular el tiempo libre por fecha
+      const freeTime = calculateFreeTime(occupiedTimes);
+      setFreeTime(freeTime);
     } catch (error) {
       console.error('Error fetching appointments:', error);
+      toast.error('Error fetching appointments. Please try again.');
     }
   };
 
- 
+  const calculateFreeTime = (occupiedTimes) => {
+    const freeTime = {};
+    occupiedTimes.forEach(time => {
+      const date = new Date(time).toISOString().split('T')[0];
+      if (!freeTime[date]) {
+        freeTime[date] = 0;
+      }
+      freeTime[date] += 15; // Asumiendo intervalos de 15 minutos
+    });
+    return freeTime;
+  };
+
   useEffect(() => {
     const dateParam = searchParams.get('date');
     const nameParam = searchParams.get('name');
@@ -73,156 +103,99 @@ export default function AppointmentScheduler() {
       setPhone(phoneParam);
     }
   }, [searchParams]);
+
   useEffect(() => {
     getOccupiedTimes(selectedDate);
   }, [selectedDate]);
 
   useEffect(() => {
-    const durationperService = 1.25; // Duración predeterminada por servicio
-    setTotalDuration(selectedServices.length * durationperService);
+    const durationPerService = 1.25; // Duración predeterminada por servicio
+    setTotalDuration(selectedServices.length * durationPerService);
   }, [selectedServices]);
-  // Generar horarios disponibles
 
-  
   // Manejar la selección de servicios
   const handleServiceChange = (selectedOptions) => {
     setSelectedServices(selectedOptions);
   };
-  
-  const generateAvailableTimes = (opcion) => {
+
+  const generateAvailableTimes = () => {
     const slots = [];
-    const startTime = new Date(selectedDate.setHours(15, 0, 0, 0)); // Comienza a las 3:00 PM en hora de México
-    const endTime = new Date(selectedDate.setHours(18, 0, 0, 0)); // Termina a las 6:00 PM en hora de México
-    let cantidadocupados = 0;
-    console.log('Horarios ocupados (UTC):', occupiedTimes);
+    let startHour, endHour;
+    const month = selectedDate.getMonth();
+   if (month === 10) { // Noviembre
+      startHour = 15; // 3:00 PM
+      endHour = 18; // 6:00 PM
+    } else if (month === 11) { // Diciembre
+      startHour = 11; // 2:00 PM
+      endHour = 18; // 5:00 PM
+    } else {
+      startHour = 15; // 9:00 AM
+      endHour = 18; // 5:00 PM
+    }
+    const startTime = new Date(selectedDate.setHours(startHour, 0, 0, 0));
+    const endTime = new Date(selectedDate.setHours(endHour, 0, 0, 0));
+    // Filtrar los horarios ocupados para el día seleccionado
+    const occupiedTimesForDay = occupiedTimes.filter(time => {
+      const occupiedDate = new Date(time);
+      return occupiedDate.toDateString() === selectedDate.toDateString();
+    });
+  
+    console.log('Horarios ocupados (UTC) para el día seleccionado:', occupiedTimesForDay);
   
     while (startTime < endTime) {
       // Convertir el tiempo de inicio a UTC en formato numérico
-      const startTimeUTC = startTime.getTime() - (0 * 60 * 60 * 1000); // Restar 6 horas para convertir de GMT-6 a UTC
+      const startTimeUTC = startTime.getTime() ; // Sumar 6 horas para convertir de GMT-6 a UTC
       const endTimeUTC = startTimeUTC + (15 * 60 * 1000); // Intervalo de 15 minutos
   
       console.log('Comparando startTimeUTC:', new Date(startTimeUTC).toISOString(), 'con endTimeUTC:', new Date(endTimeUTC).toISOString());
   
       // Verificar si algún horario ocupado cae dentro del intervalo de tiempo generado
-      const isOccupied = occupiedTimes.some(occupied => {
-        console.log('Comparando con occupied:', new Date(occupied).toISOString());
-        return occupied >= startTimeUTC && occupied < endTimeUTC;
+      const isOccupied = occupiedTimesForDay.some(occupied => {
+        const occupiedStart = new Date(occupied).toISOString();
+        const startTimeString = new Date(startTimeUTC).toISOString();
+        const endTimeString = new Date(endTimeUTC).toISOString();
+        const result = occupied >= startTimeUTC && occupied < endTimeUTC;
+        console.log(`Comparando ${occupiedStart} con intervalo ${startTimeString} - ${endTimeString}: ${result}`);
+        return result;
       });
   
       if (!isOccupied) {
-        cantidadocupados = cantidadocupados + 1;
         // Convertir el tiempo de UTC a GMT-6 al regresarlo
-        const startTimeGMTMinus6 = new Date(startTimeUTC + (0 * 60 * 60 * 1000));
+        const startTimeGMTMinus6 = new Date(startTimeUTC);
         slots.push(startTimeGMTMinus6);
       }
-      //Periodo de tiempo de 1.25 horas
-      startTime.setMinutes(startTime.getMinutes() + 75); // Intervalos de 1.25 horas (75 minutos)
+      startTime.setMinutes(startTime.getMinutes() + 75); // Intervalos de 15 minutos
     }
   
-    console.log('Cantidad de ocupados', cantidadocupados);
-    if (opcion === 1) {
-      return slots;
-    }else{
-      return cantidadocupados;
-    }
+    console.log('Horarios disponibles (GMT-6):', slots);
+    return slots;
   };
-  
-  // Manejar la selección de servicios
-  const isTimeAvailable = (startTime, duration, occupiedTimes) => {
-    const startUTC = startTime.getTime();
-    const durationMillis = duration * 60 * 60 * 1000; // Convierte duración a milisegundos
-    const endUTC = startUTC + durationMillis;
-  
-    // Permitir citas que terminen después del horario de cierre (6:00 PM)
-    const endOfDay = new Date(startTime);
-    endOfDay.setHours(18, 0, 0, 0); // 6:00 PM hora local
-  
-    if (endUTC > endOfDay.getTime()) {
-      return true; // Permitir citas que excedan las 6:00 PM
-    }
-  
-    // Verificar que ningún intervalo ocupado interfiera con la cita
-    for (let time = startUTC; time < endUTC; time += 15 * 60 * 1000) {
-      if (occupiedTimes.includes(time)) {
-        return false; // Si algún intervalo está ocupado, no permitir
-      }
-    }
-  
-    return true; // Todos los intervalos están disponibles
-  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const durationPerService = 1.25; // Duración por servicio (en horas)
-  const totalDurationHours = selectedServices.length * durationPerService;
+    const serviceValues = selectedServices.join(',');
 
-  if (!isTimeAvailable(selectedTime, totalDurationHours, occupiedTimes)) {
-    toast.error("No hay disponibilidad para la duración total seleccionada.");
-    return;
-  }
     // Convertir los servicios a una cadena que se pueda enviar en la URL (puedes usar JSON o separar por comas)
-    const serviceValues = selectedServices.map(service => service.value).join(',');
-  
+    //const serviceValues = selectedServices.map(service => service.value).join(',');
+    console.log('selectedServices:', selectedServices);
     const appointmentData = {
       date: selectedTime.toISOString(),
-      services: selectedServices.map(service => service.value),
+      //services: selectedServices.map(service => service.value),
+      services:selectedServices,
       name,
       phone,
       totalDuration,
     };
-  
+    console.log('appointmentData:', appointmentData);
     // Redirigir a la página de confirmación y pasar los datos, incluyendo los servicios
     router.push(`/citas/agendar/confirmacion?date=${selectedTime.toISOString()}&name=${name}&phone=${phone}&services=${serviceValues}&totalDuration=${totalDuration}`);
   };
-  
-    // Función para determinar la clase CSS basada en el tiempo libre
-    const tileClassName1 = () => {
-        let disponibilidad = generateAvailableTimes(1);
-        
-        if (disponibilidad >= 4) {
-          console.log('full');
-          return 'full'; // Mucho tiempo libre
-        } else if (disponibilidad >= 5) {
-          console.log('almost-full');
-          return 'almost-full '; // Tiempo libre moderado
-        } else {
-          console.log('available');
-          return 'available'; // Poco tiempo libre
-        }
-      
-      return null;
-    };
 
-    const tileClassName = ({ date , view= 'month' }) => {
-      if (view === 'month') {
-        const month = date.getMonth();
-        const dateString = date.toISOString().split('T')[0];
-        const freeMinutes = freeTime[dateString] || 0;
-        const totalSlots = 12; // Total de intervalos de 15 minutos entre 3 PM y 6 PM
-        const availableSlots = totalSlots - (freeMinutes / 15);
-        const percentageFree = (availableSlots / totalSlots) * 100;
-        console.log('Porcentaje de tiempo libre:', percentageFree);
-        if (month === 10) { // Mes de noviembre (0 = enero, 10 = noviembre)
-          if (percentageFree >= 100) {
-            return 'bg-green-50'; // Mucho tiempo libre
-          } else if (percentageFree >= 60) {
-            return 'bg-yellow-500'; // Tiempo libre moderado
-          } else {
-            return 'bg-red-500'; // Poco tiempo libre
-          }
-        }
-      }
-      return null;
-    };
-    const freeTime = {
-      '2023-11-01': 180, // 3 horas libres
-      '2023-11-02': 90,  // 1.5 horas libres
-      '2023-11-03': 30,  // 0.5 horas libres
-      '2023-11-04': 0,   // No hay tiempo libre
-    };
+  const availableTimes = generateAvailableTimes();
+
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <ToastContainer position="top-right" autoClose={3000} /> {/* Configuración del Toast */}
-
+      <ToastContainer />
       <div className="max-w-lg mx-auto p-4 bg-white shadow-lg rounded-lg">
         <h2 className="text-xl font-semibold text-center mb-4">Agenda tu cita</h2>
         <form onSubmit={handleSubmit}>
@@ -230,14 +203,11 @@ export default function AppointmentScheduler() {
             <label className="block text-gray-700">Selecciona la fecha:</label>
             <Calendar
               onChange={(date) => {
-                const newDate = new Date(date);
-                setSelectedDate(newDate);
-                // Actualiza `selectedTime` para que refleje la nueva fecha seleccionada
-                setSelectedTime(new Date(newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes())));
+                setSelectedDate(new Date(date));
+                setSelectedTime(new Date(date)); // Asegúrate de actualizar también la hora
               }}
               value={selectedDate}
               tileDisabled={({ date }) => !date}
-              dateFormat="Pp"
               className="w-full p-2 border rounded shadow-sm"
               onActiveStartDateChange={({ activeStartDate }) => getOccupiedTimes(activeStartDate)}
             />
@@ -245,34 +215,56 @@ export default function AppointmentScheduler() {
 
           <div className="mb-4">
             <label className="block text-gray-700">Selecciona la hora:</label>
-            <DatePicker
-              selected={selectedTime}
-              onChange={(date) => setSelectedTime(date)}
-              showTimeSelect
-              showTimeSelectOnly
-              timeIntervals={15}
-              timeCaption="Hora"
-              dateFormat="h:mm aa"
-              className="w-full p-2 border rounded"
-              minTime={addHours(setHours(setMinutes(new Date(), 0), 15), 6)} // 3:00 PM UTC
-              maxTime={addHours(setHours(setMinutes(new Date(), 0), 18), 6)} // 6:00 PM UTC
-              includeTimes={generateAvailableTimes(1)}
-              onKeyDown={(e) => e.preventDefault()} // Evita que el usuario escriba manualmente
-
-            />
+            <div className="grid grid-cols-3 gap-2">
+              {availableTimes.map((time) => (
+                <label key={time} className="block text-gray-700">
+                  <input
+                    type="radio"
+                    name="selectedTime"
+                    value={time}
+                    checked={selectedTime.getTime() === time.getTime()}
+                    onChange={() => setSelectedTime(time)}
+                    className="mr-2"
+                  />
+                  {time.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-gray-700">Selecciona los servicios:</label>
-            <Select
-              isMulti
-              options={serviceOptions}
-              onChange={handleServiceChange}
-              className="w-full"
-              onKeyDown={(e) => e.preventDefault()} // Evita que el usuario escriba manualmente
+  <label className="block text-gray-700 font-medium mb-2">Selecciona los servicios:</label>
+  <select
+    multiple
+    value={selectedServices}
+    onChange={(e) => {
+      const selectedOptions = Array.from(e.target.selectedOptions).map(
+        (option) => option.value
+      );
+      //console.log('selectedOptions:', selectedOptions);
+      setSelectedServices(selectedOptions);
+    }}
+    className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 text-gray-700 bg-white"
+  >
+    <option value="Pedicure" className="p-2">
+      Pedicure
+    </option>
+    <option value="Manicure" className="p-2">
+      Manicure
+    </option>
+    <option value="Gelish" className="p-2">
+      Soft Gel
+    </option>
+    <option value="Pintura Tradicional" className="p-2">
+      Pintura Tradicional
+    </option>
+  </select>
+</div>
 
-            />
-          </div>
 
           <div className="mb-4">
             <label className="block text-gray-700">Nombre:</label>

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@nextui-org/select": "^2.2.7",
     "@prisma/client": "^5.22.0",
     "axios": "^1.7.7",
     "cors": "^2.8.5",
@@ -18,8 +19,10 @@
     "react": "19.0.0-rc-66855b96-20241106",
     "react-calendar": "^5.1.0",
     "react-datepicker": "^7.5.0",
+    "react-datetime-picker": "^6.0.1",
     "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-select": "^5.8.3",
+    "react-time-picker": "^7.0.0",
     "react-toastify": "^10.0.6"
   },
   "devDependencies": {
