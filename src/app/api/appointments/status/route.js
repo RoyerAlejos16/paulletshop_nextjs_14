@@ -17,6 +17,7 @@ function setCorsHeaders(response) {
 }
 export async function POST(request) {
   const response = new NextResponse();
+  let mensaje;
 
   // Configurar CORS
   setCorsHeaders(response);
@@ -46,7 +47,22 @@ export async function POST(request) {
       ...updatedAppointment,
       date: updatedAppointment.date.toString(),
     };
-
+    const notificationData = {
+      numero: [updatedAppointment.number],
+      mensaje: `Buen día ${updatedAppointment.name}, tu cita (${updatedAppointment.service} el ${new Date(Number(updatedAppointment.date)).toLocaleString('es-ES', {
+        timeZone: 'America/Mexico_City',
+        hour12: true,
+      })}) ha sido ${variable}. Gracias. 📅 Favor de responder este mensaje.`,
+    };
+    
+    console.log('notificationData:', notificationData);
+    await fetch('http://localhost:3001/mensaje/enviar_mod', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notificationData),
+    });
     return NextResponse.json(updatedAppointmentResponse, { status: 200 });
   } catch (error) {
     console.error('Error updating appointment status:', error);

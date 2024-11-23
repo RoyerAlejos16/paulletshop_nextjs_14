@@ -184,7 +184,21 @@ export async function POST(request) {
       ...appointment,
       date: appointment.date.toString(),
     };
-
+    let mensaje = `Buen día ${appointment.name}, tu cita (${appointment.service} el ${new Date(Number(appointment.date)).toLocaleString('es-ES', {
+      timeZone: 'America/Mexico_City',
+      hour12: true,
+    })}) ha sido creada. En brevedad me pondré en contacto contigo o te llegará un mensaje de confirmación. Gracias. 📅 Favor de responder este mensaje.`;
+    const notificationData = {
+      numero: [appointment.number],
+      mensaje: mensaje,
+    };
+    await fetch('http://localhost:3001/mensaje/enviar_mod', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notificationData),
+    });
     return NextResponse.json(appointmentResponse, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
