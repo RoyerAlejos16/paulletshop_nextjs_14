@@ -9,6 +9,7 @@ const ConfirmationPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [appointmentData, setAppointmentData] = useState(null);
+  const [appointmentConfirmed, setAppointmentConfirmed] = useState(false); // Estado para controlar la confirmación de la cita
 
   useEffect(() => {
     const date = searchParams.get('date');
@@ -41,7 +42,9 @@ const ConfirmationPage = () => {
       )}&totalDuration=${searchParams.get('totalDuration')}`
     );
   };
-
+  const handleNewAppointment = () => {
+    router.push('/citas/agendar');
+  };
   const handleConfirm = async () => {
     const data = {
       date: appointmentData.date,
@@ -55,7 +58,7 @@ const ConfirmationPage = () => {
     try {
       const response = await axios.post('/api/appointments', data);
       console.log('Cita creada:', response.data);
-      alert('Cita confirmada');
+      setAppointmentConfirmed(true); // Confirmar la cita
     } catch (error) {
       console.error('Error al crear la cita:', error);
       alert('Error al confirmar la cita');
@@ -104,20 +107,32 @@ const ConfirmationPage = () => {
         {Math.round((appointmentData.totalDuration % 1) * 60)} minutos
       </p>
 
-      <div className="flex justify-between mb-4">
-        <button
-          onClick={handleEdit}
-          className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-        >
-          Editar Cita
-        </button>
-        <button
-          onClick={handleConfirm}
-          className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-        >
-          Realizar Cita
-        </button>
-      </div>
+      {appointmentConfirmed ? (
+        <div className="text-center">
+          <p className="text-lg mb-4 text-green-500">Cita Solicitada</p>
+          <button
+            onClick={handleNewAppointment}
+            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+          >
+            Agendar otra cita
+          </button>
+        </div>
+      ) : (
+        <div className="flex justify-between mb-4">
+          <button
+            onClick={handleEdit}
+            className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+          >
+            Editar Cita
+          </button>
+          <button
+            onClick={handleConfirm}
+            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+          >
+            Realizar Cita
+          </button>
+        </div>
+      )}
 
       <p className="text-sm text-red-500 text-center">
         Por favor, verifique que el número de teléfono sea correcto para recibir

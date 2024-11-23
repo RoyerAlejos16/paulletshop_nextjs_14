@@ -195,3 +195,30 @@ export async function OPTIONS(request) {
   setCorsHeaders(response);
   return response;
 }
+
+
+export async function PATCH(request) {
+  const response = new NextResponse();
+  setCorsHeaders(response);
+
+  const { id, status } = await request.json();
+  console.log('Received appointment status:', { id, status });
+  return NextResponse.json("ok", { status: 200 });
+
+  try {
+    const updatedAppointment = await prisma.citas.update({
+      where: { id },
+      data: { status },
+    });
+
+    const updatedAppointmentResponse = {
+      ...updatedAppointment,
+      date: updatedAppointment.date.toString(),
+    };
+
+    return NextResponse.json(updatedAppointmentResponse, { status: 200 });
+  } catch (error) {
+    console.error('Error updating appointment status:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
