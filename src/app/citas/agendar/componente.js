@@ -10,6 +10,11 @@ import axios from 'axios';
 import { useSearchParams } from 'next/navigation';
 import { set } from 'date-fns';
 import { toast, ToastContainer } from 'react-toastify';
+import '../../globals.css';
+import { setHours, setMinutes, addHours } from 'date-fns';
+
+
+
 export default function AppointmentScheduler() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [occupiedTimes, setOccupiedTimes] = useState([]);
@@ -44,10 +49,14 @@ export default function AppointmentScheduler() {
   
       setOccupiedTimes(occupiedTimes);
       setAppointments(appointments);
+       // Calcular el tiempo libre por fecha
+       
     } catch (error) {
       console.error('Error fetching appointments:', error);
     }
   };
+
+ 
   useEffect(() => {
     const dateParam = searchParams.get('date');
     const nameParam = searchParams.get('name');
@@ -80,11 +89,11 @@ export default function AppointmentScheduler() {
     setSelectedServices(selectedOptions);
   };
   
-  const generateAvailableTimes = () => {
+  const generateAvailableTimes = (opcion) => {
     const slots = [];
     const startTime = new Date(selectedDate.setHours(15, 0, 0, 0)); // Comienza a las 3:00 PM en hora de México
     const endTime = new Date(selectedDate.setHours(18, 0, 0, 0)); // Termina a las 6:00 PM en hora de México
-  
+    let cantidadocupados = 0;
     console.log('Horarios ocupados (UTC):', occupiedTimes);
   
     while (startTime < endTime) {
@@ -101,15 +110,21 @@ export default function AppointmentScheduler() {
       });
   
       if (!isOccupied) {
+        cantidadocupados = cantidadocupados + 1;
         // Convertir el tiempo de UTC a GMT-6 al regresarlo
         const startTimeGMTMinus6 = new Date(startTimeUTC + (0 * 60 * 60 * 1000));
         slots.push(startTimeGMTMinus6);
       }
-      startTime.setMinutes(startTime.getMinutes() + 15); // Intervalos de 15 minutos
+      //Periodo de tiempo de 1.25 horas
+      startTime.setMinutes(startTime.getMinutes() + 75); // Intervalos de 1.25 horas (75 minutos)
     }
   
-    console.log('Horarios disponibles (GMT-6):', slots);
-    return slots;
+    console.log('Cantidad de ocupados', cantidadocupados);
+    if (opcion === 1) {
+      return slots;
+    }else{
+      return cantidadocupados;
+    }
   };
   
   // Manejar la selección de servicios
@@ -159,10 +174,54 @@ export default function AppointmentScheduler() {
     router.push(`/citas/agendar/confirmacion?date=${selectedTime.toISOString()}&name=${name}&phone=${phone}&services=${serviceValues}&totalDuration=${totalDuration}`);
   };
   
+    // Función para determinar la clase CSS basada en el tiempo libre
+    const tileClassName1 = () => {
+        let disponibilidad = generateAvailableTimes(1);
+        
+        if (disponibilidad >= 4) {
+          console.log('full');
+          return 'full'; // Mucho tiempo libre
+        } else if (disponibilidad >= 5) {
+          console.log('almost-full');
+          return 'almost-full '; // Tiempo libre moderado
+        } else {
+          console.log('available');
+          return 'available'; // Poco tiempo libre
+        }
+      
+      return null;
+    };
 
+    const tileClassName = ({ date , view= 'month' }) => {
+      if (view === 'month') {
+        const month = date.getMonth();
+        const dateString = date.toISOString().split('T')[0];
+        const freeMinutes = freeTime[dateString] || 0;
+        const totalSlots = 12; // Total de intervalos de 15 minutos entre 3 PM y 6 PM
+        const availableSlots = totalSlots - (freeMinutes / 15);
+        const percentageFree = (availableSlots / totalSlots) * 100;
+        console.log('Porcentaje de tiempo libre:', percentageFree);
+        if (month === 10) { // Mes de noviembre (0 = enero, 10 = noviembre)
+          if (percentageFree >= 100) {
+            return 'bg-green-50'; // Mucho tiempo libre
+          } else if (percentageFree >= 60) {
+            return 'bg-yellow-500'; // Tiempo libre moderado
+          } else {
+            return 'bg-red-500'; // Poco tiempo libre
+          }
+        }
+      }
+      return null;
+    };
+    const freeTime = {
+      '2023-11-01': 180, // 3 horas libres
+      '2023-11-02': 90,  // 1.5 horas libres
+      '2023-11-03': 30,  // 0.5 horas libres
+      '2023-11-04': 0,   // No hay tiempo libre
+    };
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center items-center p-6">
-      <ToastContainer />
+      <ToastContainer position="top-right" autoClose={3000} /> {/* Configuración del Toast */}
 
       <div className="max-w-lg mx-auto p-4 bg-white shadow-lg rounded-lg">
         <h2 className="text-xl font-semibold text-center mb-4">Agenda tu cita</h2>
@@ -178,6 +237,7 @@ export default function AppointmentScheduler() {
               }}
               value={selectedDate}
               tileDisabled={({ date }) => !date}
+              dateFormat="Pp"
               className="w-full p-2 border rounded shadow-sm"
               onActiveStartDateChange={({ activeStartDate }) => getOccupiedTimes(activeStartDate)}
             />
@@ -194,7 +254,11 @@ export default function AppointmentScheduler() {
               timeCaption="Hora"
               dateFormat="h:mm aa"
               className="w-full p-2 border rounded"
-              includeTimes={generateAvailableTimes()}
+              minTime={addHours(setHours(setMinutes(new Date(), 0), 15), 6)} // 3:00 PM UTC
+              maxTime={addHours(setHours(setMinutes(new Date(), 0), 18), 6)} // 6:00 PM UTC
+              includeTimes={generateAvailableTimes(1)}
+              onKeyDown={(e) => e.preventDefault()} // Evita que el usuario escriba manualmente
+
             />
           </div>
 
@@ -205,6 +269,8 @@ export default function AppointmentScheduler() {
               options={serviceOptions}
               onChange={handleServiceChange}
               className="w-full"
+              onKeyDown={(e) => e.preventDefault()} // Evita que el usuario escriba manualmente
+
             />
           </div>
 

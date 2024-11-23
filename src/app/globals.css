@@ -38,3 +38,29 @@ h1, h2, h3, h4, h5, h6 {
   background-color: #ddd;
   cursor: not-allowed;
 }
+/* Para fechas llenas (10 o más ocupados) */
+.full {
+  background-color: red !important; /* Rojo para fechas llenas */
+  color: white;
+}
+
+/* Para fechas casi llenas (5 o más ocupados) */
+.almost-full {
+  background-color: orange !important; /* Naranja para fechas casi llenas */
+  color: white;
+}
+
+/* Para fechas disponibles (al menos 1 ocupado, pero menos de 5) */
+.available {
+  background-color: green !important; /* Verde para fechas disponibles */
+  color: white;
+}
+input.react-datepicker-ignore-onclickoutside {
+  font-size: 16px; /* Aumenta el tamaño del texto para móviles */
+  height: 50px; /* Mejora la altura del input */
+  cursor: pointer; /* Indica que es interactivo */
+}
+
+.react-datepicker {
+  width: 100%; /* Asegura que el calendario sea legible */
+}
