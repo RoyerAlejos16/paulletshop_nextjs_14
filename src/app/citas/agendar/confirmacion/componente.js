@@ -106,7 +106,14 @@ const ConfirmationPage = () => {
         {Math.floor(appointmentData.totalDuration)} horas{' '}
         {Math.round((appointmentData.totalDuration % 1) * 60)} minutos
       </p>
-
+      <p className="text-lg text-red-500 text-center">
+  Favor de revisar bien la cita ya que si es <span className="font-bold underline text-red-700">cancelada el mismo dia</span> o <span className="font-bold underline text-red-700">no asiste</span> nos reservamos el derecho de <span className="font-bold underline text-red-700">cobrar $50</span> por cargo moratorio en su <span className="font-bold underline text-red-700">próxima cita</span>.
+</p>
+<p className="text-lg text-red-500 text-center">
+  Por favor, verifique que el número de teléfono sea correcto para recibir
+  la confirmación de la cita.
+</p>
+      
       {appointmentConfirmed ? (
         <div className="text-center">
           <p className="text-lg mb-4 text-green-500">Cita Solicitada</p>
@@ -134,10 +141,7 @@ const ConfirmationPage = () => {
         </div>
       )}
 
-      <p className="text-sm text-red-500 text-center">
-        Por favor, verifique que el número de teléfono sea correcto para recibir
-        la confirmación de la cita.
-      </p>
+      
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { useSearchParams } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { setHours, setMinutes } from 'date-fns';
+import { isSameDay, isSunday, parseISO } from 'date-fns';
 
 export default function AppointmentScheduler() {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -27,12 +28,25 @@ export default function AppointmentScheduler() {
     '2023-11-03': 30,  // 0.5 horas libres
     '2023-11-04': 0,   // No hay tiempo libre
   }); // Tiempo libre por fecha
+
+  const excludedDates = [
+    '2024-12-06', // New Year's Day
+    '2024-12-12', // New Year's Day
+    '2024-12-24', // Valentine's Day
+    '2024-12-25', // Christmas
+    '2024-12-31', // New Year's Eve
+    // Add more dates as needed
+  ].map(date => parseISO(date));
+  
+  const isExcludedDate = (date) => {
+    return isSunday(date) || excludedDates.some(excludedDate => isSameDay(date, excludedDate));
+  };
   const router = useRouter();
   const searchParams = useSearchParams();
   const serviceDurations = {
     Pedicure: 1.5, // Ejemplo: Pedicure toma 1.5 horas
     Manicure: 1,
-    Gelish: 1.25,
+    Gelish: 1.,
     "Pintura Tradicional": 1,
   };
   
@@ -48,7 +62,11 @@ export default function AppointmentScheduler() {
   const serviceOptions = [
     { value: 'Pedicure', label: 'Pedicure' },
     { value: 'Manicure', label: 'Manicure' },
-    { value: 'Gelish', label: 'Gelish' },
+    { value: 'Esmaltado Semipermanente', label: 'Esmaltado Semipermanente' },
+    { value: 'Agripie', label: 'Agripie' },
+    { value: 'Agrigel', label: 'Agrigel' },
+    { value: 'Dip Powder', label: 'Dip Powder' },
+    { value: 'Soft gel', label: 'Soft gel' },
   ];
   
   // Obtener citas ocupadas cuando se cambia la fecha activa en el calendario
@@ -207,7 +225,7 @@ export default function AppointmentScheduler() {
                 setSelectedTime(new Date(date)); // Asegúrate de actualizar también la hora
               }}
               value={selectedDate}
-              tileDisabled={({ date }) => !date}
+              tileDisabled={({ date }) => isExcludedDate(date)}
               className="w-full p-2 border rounded shadow-sm"
               onActiveStartDateChange={({ activeStartDate }) => getOccupiedTimes(activeStartDate)}
             />
@@ -256,11 +274,20 @@ export default function AppointmentScheduler() {
     <option value="Manicure" className="p-2">
       Manicure
     </option>
-    <option value="Gelish" className="p-2">
-      Soft Gel
+    <option value="Esmaltado Semipermanente" className="p-2">
+      Esmaltado Semipermanente
     </option>
-    <option value="Pintura Tradicional" className="p-2">
-      Pintura Tradicional
+    <option value="Agripie" className="p-2">
+      Agripie
+    </option>
+    <option value="Agrigel" className="p-2">
+      Agrigel
+    </option>
+    <option value="Dip Powder" className="p-2">
+      Dip Powder
+    </option>
+    <option value="Soft gel" className="p-2">
+      Soft gel
     </option>
   </select>
 </div>

@@ -30,10 +30,13 @@ export async function GET1(request) {
   try {
     const appointments = await prisma.citas.findMany({
       where: {
-        date: {
-          gte: startDate,
-          lt: endDate,
-        },
+      date: {
+        gte: startDate,
+        lt: endDate,
+      },
+      status: {
+        notIn: ['cancelado', 'no asistido','reprogramado'],
+      },
       },
     });
 
@@ -88,6 +91,7 @@ export async function GET(request) {
   
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date');
+  const vista = searchParams.get('vista');
   console.log('Received date:', date);
 
   let startDate, endDate;
@@ -109,6 +113,13 @@ export async function GET(request) {
 
   console.log('Start date (milisegundos):', startDateMillis);
   console.log('End date (milisegundos):', endDateMillis);
+  let datos;
+    if(vista == null){
+      datos = ['cancelado', 'no asistido','reprogramado','solicitado']
+    }else
+    {
+      datos = ['cancelado1']
+    }
 
   try {
     const appointments = await prisma.citas.findMany({
@@ -116,6 +127,9 @@ export async function GET(request) {
         date: {
           gte: startDateMillis,
           lt: endDateMillis,
+        },
+        status: {
+          notIn: datos,
         },
       },
     });
@@ -147,6 +161,7 @@ export async function GET(request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
 export async function POST(request) {
 
     // Manejo de CORS
@@ -156,7 +171,9 @@ export async function POST(request) {
     setCorsHeaders(response);
   
   const { date, service, duration, status, number, name } = await request.json();
-
+    // Eliminar espacios del número
+    const sanitizedNumber = number.replace(/\s+/g, '').replace('+', '');
+    console.log('number:', sanitizedNumber);
   try {
     console.log('Datos recibidos:', { date, service, duration, status, number, name });
     const startDate = new Date(date);
@@ -177,7 +194,7 @@ export async function POST(request) {
     console.log('Fecha en GMT-6 (ISO):', gmtMinus6DateISO);
     // Convertir 'service' en un arreglo si es necesario
     const appointment = await prisma.citas.create({
-      data: { date: startDateMillis, service : serviceString, duration: durationAsFloat, status, number, name },
+      data: { date: startDateMillis, service : serviceString, duration: durationAsFloat, status, number : sanitizedNumber, name },
     });
     // Crear la cita si no hay conflictos
     const appointmentResponse = {
@@ -187,12 +204,12 @@ export async function POST(request) {
     let mensaje = `Buen día ${appointment.name}, tu cita (${appointment.service} el ${new Date(Number(appointment.date)).toLocaleString('es-ES', {
       timeZone: 'America/Mexico_City',
       hour12: true,
-    })}) ha sido creada. En brevedad me pondré en contacto contigo o te llegará un mensaje de confirmación. Gracias. 📅 Favor de responder este mensaje.`;
+    })}) ha sido creada. En brevedad me pondré en contacto contigo o te llegará un mensaje de confirmación. Gracias. 📅.`;
     const notificationData = {
-      numero: [appointment.number],
+      numero: [sanitizedNumber],
       mensaje: mensaje,
     };
-    await fetch('http://localhost:3001/mensaje/enviar_mod', {
+    await fetch('http://localhost:4002/mensaje/enviar_mod', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

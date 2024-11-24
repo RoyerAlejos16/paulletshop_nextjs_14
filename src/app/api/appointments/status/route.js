@@ -56,7 +56,7 @@ export async function POST(request) {
     };
     
     console.log('notificationData:', notificationData);
-    await fetch('http://localhost:3001/mensaje/enviar_mod', {
+    await fetch('http://localhost:4002/mensaje/enviar_mod', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
