@@ -35,6 +35,10 @@ export default function AppointmentScheduler() {
     '2024-12-24', // Valentine's Day
     '2024-12-25', // Christmas
     '2024-12-31', // New Year's Eve
+    '2024-12-16', // New Year's Eve
+    '2024-12-23', // New Year's Eve
+    '2024-12-30', // New Year's Eve
+    '2025-01-01', // New Year's Eve
     // Add more dates as needed
   ].map(date => parseISO(date));
   
@@ -72,9 +76,18 @@ export default function AppointmentScheduler() {
   // Obtener citas ocupadas cuando se cambia la fecha activa en el calendario
   const getOccupiedTimes = async (date) => {
     try {
-      const response = await axios.get(`/api/appointments?date=${date.toISOString()}`);
-      
-      // Convertir los tiempos ocupados y las citas a números
+      console.log('Obteniendo citas ocupadas para la fecha:', date);
+    
+    // Obtener la fecha en formato local sin cambiar el día
+    const localDate = date.toLocaleDateString('en-CA'); // 'en-CA' produce formato 'YYYY-MM-DD'
+    const isoDate = `${localDate}T00:00:00.000Z`;
+    
+    console.log('Obteniendo citas ocupadas para la fecha::', isoDate);
+    
+    const response = await axios.get(`/api/appointments?date=${isoDate}`);
+    
+    console.log(`/api/appointments?date=${isoDate}`, response.data);
+     // Convertir los tiempos ocupados y las citas a números
       const occupiedTimes = response.data.occupiedTimes.map(time => Number(time));
       const appointments = response.data.appointments.map(appointment => ({
         ...appointment,
@@ -150,8 +163,10 @@ export default function AppointmentScheduler() {
       startHour = 15; // 9:00 AM
       endHour = 18; // 5:00 PM
     }
+    console.log('Generando horarios disponibles para el día:', selectedDate.toDateString());
     const startTime = new Date(selectedDate.setHours(startHour, 0, 0, 0));
     const endTime = new Date(selectedDate.setHours(endHour, 0, 0, 0));
+    console.log('startTime:', startTime.toISOString(), 'endTime:', endTime.toISOString());
     // Filtrar los horarios ocupados para el día seleccionado
     const occupiedTimesForDay = occupiedTimes.filter(time => {
       const occupiedDate = new Date(time);

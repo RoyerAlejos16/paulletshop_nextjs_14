@@ -115,10 +115,10 @@ export async function GET(request) {
   console.log('End date (milisegundos):', endDateMillis);
   let datos;
     if(vista == null){
-      datos = ['cancelado', 'no asistido','reprogramado','solicitado']
+      datos = ['cancelado', 'no asistido','reprogramado']
     }else
     {
-      datos = ['cancelado1']
+      
     }
 
   try {

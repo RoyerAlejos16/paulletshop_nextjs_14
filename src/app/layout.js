@@ -9,7 +9,9 @@ export default function RootLayout({ children }) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Tienda Virtual</title>
+        <link rel="icon" href="/logo.png?v=1" type="image/png" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <title>Paulette Shop</title>
       </head>
       <body>
         {/* Aquí insertas tu layout que envuelve el contenido */}
@@ -22,3 +24,4 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
+  
